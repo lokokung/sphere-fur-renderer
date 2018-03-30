@@ -3,16 +3,73 @@
 #include <string>
 
 #include "cereal/archives/json.hpp"
-#include "cereal/types/eigen.hpp"
 #include "Eigen/Dense"
+
+#define USE_DOUBLE_PRECISION 1
 
 #define SPHERE_MAX_HAIR_LAYERS 5
 #define SCENE_MAX_LIGHTS 5
 
+// Toggle to use single or double precision
+#if USE_DOUBLE_PRECISION
+typedef Eigen::Vector3d Vector3;
+typedef double decimal;
+#endif
+#if !USE_DOUBLE_PRECISION
+typedef Eigen::Vector3f Vector3;
+typedef float decimal;
+#endif
+
+// Position class to signify a position
+class Position : public Vector3 {
+public:
+    Position(void) : Vector3() {}
+
+    template<typename OtherDerived>
+    Position(const Eigen::MatrixBase<OtherDerived>& other)
+        : Vector3(other) {}
+
+    template<typename OtherDerived>
+    Position& operator=(const Eigen::MatrixBase<OtherDerived>& other) {
+        this->Vector3::operator=(other);
+        return *this;
+    }
+
+    // Serialization function
+    template<class Archive> void serialize(Archive& archive) {
+        archive(cereal::make_nvp("x", this->operator()(0)),
+                cereal::make_nvp("y", this->operator()(1)),
+                cereal::make_nvp("z", this->operator()(2)));
+    }
+};
+
+// Color class to signify a position
+class Color : public Vector3 {
+public:
+    Color(void) : Vector3() {}
+
+    template<typename OtherDerived>
+    Color(const Eigen::MatrixBase<OtherDerived>& other)
+        : Vector3(other) {}
+
+    template<typename OtherDerived>
+    Color& operator=(const Eigen::MatrixBase<OtherDerived>& other) {
+        this->Vector3::operator=(other);
+        return *this;
+    }
+
+    // Serialization function
+    template<class Archive> void serialize(Archive& archive) {
+        archive(cereal::make_nvp("r", this->operator()(0)),
+                cereal::make_nvp("g", this->operator()(1)),
+                cereal::make_nvp("b", this->operator()(2)));
+    }
+};
+
 // Camera structure to hold information about a camera
 typedef struct camera_t {
-    Eigen::Vector3d pos;
-    double near, far, fov, aspect;
+    Position pos;
+    decimal near, far, fov, aspect;
 
     // Serialization function
     template<class Archive> void serialize(Archive& archive) {
@@ -22,12 +79,13 @@ typedef struct camera_t {
                 CEREAL_NVP(fov),
                 CEREAL_NVP(aspect));
     }
-} camera;
+} Camera;
 
 // Light structure to hold information about a light
 typedef struct light_t {
-    Eigen::Vector3d pos, color;
-    double atten;
+    Position pos;
+    Color color;
+    decimal atten;
 
     // Serialization function
     template<class Archive> void serialize(Archive& archive) {
@@ -35,12 +93,12 @@ typedef struct light_t {
                 cereal::make_nvp("color", color),
                 CEREAL_NVP(atten));
     }
-} light;
+} Light;
 
 // Skin structure to hold information about the skin
 typedef struct skin_t {
-    Eigen::Vector3d diffuse, specular, ambient;
-    double phong;
+    Color diffuse, specular, ambient;
+    decimal phong;
 
     // Serialization function
     template<class Archive> void serialize(Archive& archive) {
@@ -49,12 +107,12 @@ typedef struct skin_t {
                 CEREAL_NVP(ambient),
                 CEREAL_NVP(phong));
     }
-} skin;
+} Skin;
 
 // Hair layer structure to hold information about a layer of hair
 typedef struct hair_t {
-    Eigen::Vector3d diffuse, specular, ambient;
-    double phong, density, radius, length, atten;
+    Color diffuse, specular, ambient;
+    decimal phong, density, radius, length, atten;
 
     // Serialization function
     template<class Archive> void serialize(Archive& archive) {
@@ -67,18 +125,18 @@ typedef struct hair_t {
                 CEREAL_NVP(length),
                 CEREAL_NVP(atten));
     }
-} hair;
+} Hair;
 
 // Sphere structure to hold information about a sphere
 typedef struct sphere_t {
     // Spacial data
-    Eigen::Vector3d pos;
-    double radius;
+    Position pos;
+    decimal radius;
     // Skin
-    skin skin_data;
+    Skin skin_data;
     // Layers of hairs
     int n_hair_layers;
-    hair hair_layers[SPHERE_MAX_HAIR_LAYERS];
+    Hair hair_layers[SPHERE_MAX_HAIR_LAYERS];
 
     // Serialization function
     template<class Archive> void serialize(Archive& archive) {
@@ -91,14 +149,14 @@ typedef struct sphere_t {
                                      hair_layers[i]));
         }
     }
-} sphere;
+} Sphere;
 
 // Scene structure to hold information about a scene
 typedef struct scene_t {
-    camera cam;
-    sphere s;
+    Camera cam;
+    Sphere s;
     int n_lights;
-    light lights[SCENE_MAX_LIGHTS];
+    Light lights[SCENE_MAX_LIGHTS];
 
     // Serialization function
     template<class Archive> void serialize(Archive& archive) {
@@ -110,4 +168,4 @@ typedef struct scene_t {
                                      lights[i]));
         }
     }
-} scene;
+} Scene;

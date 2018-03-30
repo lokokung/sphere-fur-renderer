@@ -11,15 +11,7 @@
 int main(int argc, char* argv[]) {
     // Initialize logging
     initialize_logging();
-    INFO("Initializing logging library...");
-
-    // Test sphere structure
-    scene s = {};
-    
-    std::ofstream os("out.json", std::ios::binary);
-    cereal::JSONOutputArchive archive(os);
-    archive(s);
-
+    INFO("Initialized logging library...");
     
     INFO("Terminating program...");
     return 0;
